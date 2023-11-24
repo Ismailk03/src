@@ -1,4 +1,4 @@
-version: "1.0"
+version: "2"
 
 pipelines:
   - name: "Deploy to S3"
@@ -6,38 +6,29 @@ pipelines:
       events:
         - push
 
-    steps:
-      - name: "Checkout Repository"
-        checkout: {}
+    jobs:
+      - name: "Build and Deploy"
+        steps:
+          - name: "Checkout Repository"
+            uses: actions/checkout@v2
 
-      - name: "Install Dependencies"
-        run: |
-          # Install Node.js and npm
-          curl -fsSL https://deb.nodesource.com/setup_14.x | sudo -E bash -
-          sudo apt-get install -y nodejs
+          - name: "Setup Node.js"
+            uses: actions/setup-node@v3
+            with:
+              node-version: "14"
 
-          # Install project dependencies
-          npm install
-        envs:
-          - name: "CI"
-            value: "true"
+          - name: "Install Dependencies"
+            run: |
+              npm install
 
-      - name: "Build and Deploy to S3"
-        run: |
-          # Build the React app
-          npm run build
+          - name: "Build React App"
+            run: |
+              npm run build
 
-          # Upload build artifacts to S3
-          aws s3 sync build/ s3://static-app-react
-        secrets:
-          - AWS_ACCESS_KEY_ID
-          - AWS_SECRET_ACCESS_KEY
-        envs:
-          - name: "AWS_DEFAULT_REGION"
-            value: "US East (N. Virginia)"  # Replace with your AWS region
-
-secrets:
-  - name: "AWS_ACCESS_KEY_ID"
-    value: "${{ secrets.AKIAUEEQUF2IKBFYMZ5N }}"
-  - name: "AWS_SECRET_ACCESS_KEY"
-    value: "${{ secrets.MnfJ/Yt2BACky+pZbEByzw0RUZ2dvc0Uj5Iluyqz}}"
+          - name: "Deploy to S3"
+            run: |
+              aws s3 sync build/ s3://static-app-react
+            env:
+              AWS_ACCESS_KEY_ID: ${{ secrets.AKIAUEEQUF2IKBFYMZ5N }}
+              AWS_SECRET_ACCESS_KEY: ${{ secrets.MnfJ/Yt2BACky+pZbEByzw0RUZ2dvc0Uj5Iluyqz }}
+              AWS_DEFAULT_REGION: "US East (N. Virginia)"
